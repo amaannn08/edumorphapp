@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base href="$FLUTTER_BASE_HREF">
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="Shiksha Verse — Learn. Practice. Excel. Your minimalist EdTech platform for lecture reels, shorts, and quiz battles.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#4F46E5">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Shiksha Verse">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>Shiksha Verse</title>
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    body {
+      margin: 0;
+      background-color: #F8F9FF;
+    }
+    /* Mobile frame on wide screens */
+    @media (min-width: 480px) {
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        background: linear-gradient(135deg, #1A0F8A 0%, #4F46E5 100%);
+        min-height: 100vh;
+      }
+      #flutter-app-wrapper {
+        width: 390px;
+        min-height: 100vh;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 0 60px rgba(0,0,0,0.4);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="flutter-app-wrapper">
+    <script src="flutter_bootstrap.js" async></script>
+  </div>
+</body>
+</html>

@@ -1,0 +1,64 @@
+'use strict';
+
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const compression = require('compression');
+
+const { ALLOWED_ORIGINS, NODE_ENV } = require('./config/env');
+const { apiLimiter, authLimiter } = require('./middleware/rateLimiter');
+const { errorHandler } = require('./middleware/errorHandler');
+const logger = require('./services/logger');
+
+// Routes
+const authRoutes = require('./routes/auth');
+const courseRoutes = require('./routes/courses');
+const shortsRoutes = require('./routes/shorts');
+const quizRoutes = require('./routes/quiz');
+const profileRoutes = require('./routes/profile');
+const uploadRoutes = require('./routes/upload');
+
+const app = express();
+
+// ── Security & Parsing ────────────────────────────────────────────────────────
+app.use(helmet());
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman)
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS: origin ${origin} not allowed`));
+  },
+  credentials: true,
+}));
+app.use(compression());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+
+// ── Logging ───────────────────────────────────────────────────────────────────
+app.use(morgan(NODE_ENV === 'production' ? 'combined' : 'dev', {
+  stream: { write: (msg) => logger.http(msg.trim()) },
+}));
+
+// ── Health Check ──────────────────────────────────────────────────────────────
+app.get('/health', (req, res) => {
+  res.json({ success: true, status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// ── API Routes ────────────────────────────────────────────────────────────────
+app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/courses', apiLimiter, courseRoutes);
+app.use('/api/shorts', apiLimiter, shortsRoutes);
+app.use('/api/quiz', apiLimiter, quizRoutes);
+app.use('/api/profile', apiLimiter, profileRoutes);
+app.use('/api/upload', apiLimiter, uploadRoutes);
+
+// ── 404 Handler ───────────────────────────────────────────────────────────────
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: `Route ${req.method} ${req.path} not found` });
+});
+
+// ── Global Error Handler ──────────────────────────────────────────────────────
+app.use(errorHandler);
+
+module.exports = app;
