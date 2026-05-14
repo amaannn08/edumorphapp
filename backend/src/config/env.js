@@ -57,4 +57,15 @@ module.exports = {
   // Rate Limit
   RATE_LIMIT_WINDOW_MS: parseInt(optional('RATE_LIMIT_WINDOW_MS', '900000'), 10),
   RATE_LIMIT_MAX: parseInt(optional('RATE_LIMIT_MAX', '100'), 10),
+
+  // SMS (Twilio) — optional; phone OTP stubs to console.log in dev if absent
+  SMS_PROVIDER_KEY: optional('SMS_PROVIDER_KEY'),
+  SMS_FROM_NUMBER:  optional('SMS_FROM_NUMBER'),
+
+  // Google SSO — optional; /api/auth/google returns 503 if absent
+  GOOGLE_CLIENT_ID: optional('GOOGLE_CLIENT_ID'),
+
+  // AI summary for Vault — optional; /api/vault/ai-summary returns 503 if absent
+  AI_SUMMARY_API_KEY: optional('AI_SUMMARY_API_KEY'),
+  AI_SUMMARY_MODEL:   optional('AI_SUMMARY_MODEL', 'gpt-4o-mini'),
 };

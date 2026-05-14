@@ -50,18 +50,26 @@ router.get('/', authenticate, async (req, res, next) => {
 });
 
 // ── PUT /api/profile ──────────────────────────────────────────────────────────
+const VALID_GRADES = ['Class 5', 'Class 6', 'Class 7', 'Class 8', 'Class 9', 'Class 10',
+                      'Class 11', 'Class 12', 'Undergraduate', 'Postgraduate'];
+
 router.put('/', authenticate, [
   body('name').optional().trim().notEmpty(),
   body('username').optional().trim().isAlphanumeric().isLength({ min: 3, max: 30 }),
-  body('grade').optional().trim(),
+  body('grade').optional().trim().custom(v => {
+    if (v && !VALID_GRADES.includes(v)) throw new Error(`grade must be one of: ${VALID_GRADES.join(', ')}`);
+    return true;
+  }),
   body('subjects').optional().isArray(),
   body('avatar_url').optional().isURL(),
+  body('language').optional().trim().isLength({ max: 20 }),
+  body('career_interests').optional().isArray(),
 ], async (req, res, next) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) throw new AppError(errors.array()[0].msg, 422);
 
-    const { name, username, grade, subjects, avatar_url } = req.body;
+    const { name, username, grade, subjects, avatar_url, language, career_interests } = req.body;
 
     if (username) {
       const taken = await db.query(
@@ -73,19 +81,23 @@ router.put('/', authenticate, [
 
     const result = await db.query(
       `UPDATE users SET
-        name = COALESCE($1, name),
-        username = COALESCE($2, username),
-        grade = COALESCE($3, grade),
-        subjects = COALESCE($4, subjects),
-        avatar_url = COALESCE($5, avatar_url),
-        updated_at = NOW()
-       WHERE id = $6
-       RETURNING id, name, email, username, grade, subjects, avatar_url, xp, streak_days`,
-      [name, username, grade, subjects, avatar_url, req.user.id]
+        name             = COALESCE($1, name),
+        username         = COALESCE($2, username),
+        grade            = COALESCE($3, grade),
+        subjects         = COALESCE($4, subjects),
+        avatar_url       = COALESCE($5, avatar_url),
+        language         = COALESCE($6, language),
+        career_interests = COALESCE($7, career_interests),
+        updated_at       = NOW()
+       WHERE id = $8
+       RETURNING id, name, email, username, grade, subjects, avatar_url,
+                 xp, streak_days, language, career_interests`,
+      [name, username, grade, subjects, avatar_url, language, career_interests, req.user.id]
     );
 
     return res.json({ success: true, data: result.rows[0] });
   } catch (err) { next(err); }
 });
+
 
 module.exports = router;

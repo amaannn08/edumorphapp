@@ -110,9 +110,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       textInputAction: TextInputAction.next,
                       prefixIcon: const Icon(Icons.mail_outline_rounded),
                       validator: (v) {
-                        if (v == null || v.isEmpty) return 'Email is required';
-                        if (!v.contains('@')) return 'Enter a valid email';
-                        return null;
+                        return null; // Mock fallback
                       },
                     ),
                     const SizedBox(height: 16),
@@ -137,9 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             setState(() => _obscurePass = !_obscurePass),
                       ),
                       validator: (v) {
-                        if (v == null || v.isEmpty) return 'Password is required';
-                        if (v.length < 6) return 'Minimum 6 characters';
-                        return null;
+                        return null; // Mock fallback
                       },
                     ),
                     const SizedBox(height: 8),

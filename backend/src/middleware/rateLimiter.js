@@ -21,4 +21,13 @@ const authLimiter = rateLimit({
   message: { success: false, message: 'Too many auth attempts, please try again in 15 minutes.' },
 });
 
-module.exports = { apiLimiter, authLimiter };
+/** Phone OTP: 3 sends per phone per 10 minutes */
+const phoneOtpLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 min
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many OTP requests. Please wait 10 minutes.' },
+});
+
+module.exports = { apiLimiter, authLimiter, phoneOtpLimiter };

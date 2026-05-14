@@ -8,16 +8,20 @@ const compression = require('compression');
 
 const { ALLOWED_ORIGINS, NODE_ENV } = require('./config/env');
 const { apiLimiter, authLimiter } = require('./middleware/rateLimiter');
+const { authenticate } = require('./middleware/auth');
 const { errorHandler } = require('./middleware/errorHandler');
 const logger = require('./services/logger');
 
 // Routes
-const authRoutes = require('./routes/auth');
-const courseRoutes = require('./routes/courses');
-const shortsRoutes = require('./routes/shorts');
-const quizRoutes = require('./routes/quiz');
+const authRoutes    = require('./routes/auth');
+const courseRoutes  = require('./routes/courses');
+const shortsRoutes  = require('./routes/shorts');
+const quizRoutes    = require('./routes/quiz');
 const profileRoutes = require('./routes/profile');
-const uploadRoutes = require('./routes/upload');
+const uploadRoutes  = require('./routes/upload');
+const homeRoutes    = require('./routes/home');
+const vaultRoutes   = require('./routes/vault');
+const battleRoutes  = require('./routes/battle');
 
 const app = express();
 
@@ -46,12 +50,15 @@ app.get('/health', (req, res) => {
 });
 
 // ── API Routes ────────────────────────────────────────────────────────────────
-app.use('/api/auth', authLimiter, authRoutes);
-app.use('/api/courses', apiLimiter, courseRoutes);
-app.use('/api/shorts', apiLimiter, shortsRoutes);
-app.use('/api/quiz', apiLimiter, quizRoutes);
-app.use('/api/profile', apiLimiter, profileRoutes);
-app.use('/api/upload', apiLimiter, uploadRoutes);
+app.use('/api/auth',    authLimiter, authRoutes);
+app.use('/api/courses', apiLimiter,  courseRoutes);
+app.use('/api/shorts',  apiLimiter,  shortsRoutes);
+app.use('/api/quiz',    apiLimiter,  quizRoutes);
+app.use('/api/profile', apiLimiter,  profileRoutes);
+app.use('/api/upload',  apiLimiter,  uploadRoutes);
+app.use('/api/home',    apiLimiter,  authenticate, homeRoutes);
+app.use('/api/vault',   apiLimiter,  authenticate, vaultRoutes);
+app.use('/api/battle',  apiLimiter,  authenticate, battleRoutes);
 
 // ── 404 Handler ───────────────────────────────────────────────────────────────
 app.use((req, res) => {

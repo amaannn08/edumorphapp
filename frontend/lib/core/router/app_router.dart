@@ -1,76 +1,115 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../services/api_service.dart';
+
+// Auth screens
 import '../../features/auth/login_screen.dart';
-import '../../features/auth/otp_screen.dart';
 import '../../features/auth/signup_screen.dart';
-import '../../features/battle/learning_battle_screen.dart';
+import '../../features/auth/otp_screen.dart';
+import '../../features/splash/splash_screen.dart';
+import '../../features/onboarding/profile_setup_screen.dart';
+
+// Shell + tabs
 import '../../features/home/app_shell.dart';
 import '../../features/home/home_screen.dart';
-import '../../features/onboarding/profile_setup_screen.dart';
-import '../../features/player/video_player_screen.dart';
-import '../../features/profile/profile_screen.dart';
 import '../../features/shorts/shorts_screen.dart';
-import '../../features/splash/splash_screen.dart';
+import '../../features/battle/learning_battle_screen.dart';
+import '../../features/battle/battle_quiz_screen.dart';
+import '../../features/vault/my_learning_vault_screen.dart';
+import '../../features/profile/profile_screen.dart';
+
+// Player
+import '../../features/player/lecture_detail_screen.dart';
+import '../../features/player/video_player_screen.dart';
+
+final _rootKey = GlobalKey<NavigatorState>();
+final _shellKey = GlobalKey<NavigatorState>();
+
+/// Whether the user is authenticated (token in memory).
+bool get _isAuth => true; // ApiService.instance.hasToken;
 
 final appRouter = GoRouter(
-  initialLocation: '/',
+  navigatorKey: _rootKey,
+  initialLocation: '/splash',
+  redirect: (context, state) {
+    final isAuth  = _isAuth;
+    final loc     = state.matchedLocation;
+    final onAuth  = loc.startsWith('/login') ||
+                    loc.startsWith('/signup') ||
+                    loc.startsWith('/otp') ||
+                    loc.startsWith('/setup') ||
+                    loc.startsWith('/splash') ||
+                    loc.startsWith('/onboarding');
+
+    if (!isAuth && !onAuth) return '/login';
+    if (isAuth && onAuth)  return '/home';
+    return null;
+  },
   routes: [
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const SplashScreen(),
-    ),
-    GoRoute(
-      path: '/login',
-      builder: (context, state) => const LoginScreen(),
-    ),
-    GoRoute(
-      path: '/signup',
-      builder: (context, state) => const SignupScreen(),
-    ),
+    // ── Splash / Onboarding ────────────────────────────────────────────
+    GoRoute(path: '/splash',     builder: (_, __) => const SplashScreen()),
+    GoRoute(path: '/onboarding', builder: (_, __) => const SplashScreen()),
+
+    // ── Auth ───────────────────────────────────────────────────────────
+    GoRoute(path: '/login',  builder: (_, __) => const LoginScreen()),
+    GoRoute(path: '/signup', builder: (_, __) => const SignupScreen()),
     GoRoute(
       path: '/otp',
-      builder: (context, state) => const OtpScreen(),
+      builder: (_, state) {
+        final extra = state.extra as Map<String, dynamic>? ?? {};
+        return OtpScreen(
+          phoneNumber: extra['phone'] as String? ?? '',
+          userName:    extra['name']  as String?,
+        );
+      },
     ),
     GoRoute(
       path: '/setup',
-      builder: (context, state) => const ProfileSetupScreen(),
-    ),
-    GoRoute(
-      path: '/player',
-      builder: (context, state) => const VideoPlayerScreen(),
+      builder: (_, state) {
+        final extra = state.extra as Map<String, dynamic>? ?? {};
+        return ProfileSetupScreen(userName: extra['name'] as String?);
+      },
     ),
 
-    // Shell route — home with bottom nav
+    // ── Main shell (bottom nav) ─────────────────────────────────────────
     ShellRoute(
-      builder: (context, state, child) {
-        final loc = state.uri.path;
-        int index = 0;
-        if (loc.startsWith('/home/shorts')) index = 1;
-        if (loc.startsWith('/home/battle')) index = 2;
-        if (loc.startsWith('/home/profile')) index = 3;
-        return AppShell(currentIndex: index, child: child);
-      },
+      navigatorKey: _shellKey,
+      builder: (_, __, child) => AppShell(child: child),
       routes: [
-        GoRoute(
-          path: '/home',
-          redirect: (_, __) => '/home/feed',
-        ),
-        GoRoute(
-          path: '/home/feed',
-          builder: (context, state) => const HomeScreen(),
-        ),
-        GoRoute(
-          path: '/home/shorts',
-          builder: (context, state) => const ShortsScreen(),
-        ),
-        GoRoute(
-          path: '/home/battle',
-          builder: (context, state) => const LearningBattleScreen(),
-        ),
-        GoRoute(
-          path: '/home/profile',
-          builder: (context, state) => const ProfileScreen(),
-        ),
+        GoRoute(path: '/home',         builder: (_, __) => const HomeScreen()),
+        GoRoute(path: '/home/battle',  builder: (_, __) => const LearningBattlefieldScreen()),
+        GoRoute(path: '/home/shorts',  builder: (_, __) => const ShortsScreen()),
+        GoRoute(path: '/home/vault',   builder: (_, __) => const MyLearningVaultScreen()),
+        GoRoute(path: '/home/profile', builder: (_, __) => const ProfileScreen()),
       ],
+    ),
+
+    // ── Battle quiz (full-screen, outside shell) ────────────────────────
+    GoRoute(
+      path: '/battle/quiz',
+      builder: (_, state) {
+        final extra = state.extra as Map<String, dynamic>? ?? {};
+        return BattleQuizScreen(
+          attemptId: extra['attempt_id'] as String? ?? '',
+          questions: (extra['questions'] as List?)
+              ?.cast<Map<String, dynamic>>() ?? [],
+        );
+      },
+    ),
+
+    // ── Lecture detail (full-screen) ────────────────────────────────────
+    GoRoute(
+      path: '/lecture/:id',
+      builder: (_, state) => LectureDetailScreen(courseId: state.pathParameters['id']!),
+    ),
+
+    // ── Video player (full-screen) ──────────────────────────────────────
+    GoRoute(
+      path: '/player/:lessonId',
+      builder: (_, state) {
+        final extra = state.extra as Map<String, dynamic>? ?? {};
+        return VideoPlayerScreen(lessonData: extra);
+      },
     ),
   ],
 );

@@ -62,4 +62,12 @@ class AppColors {
   static const Color cardBorder = Color(0xFFE2E8F0);
   static const Color chipBackground = Color(0xFFEEF2FF);
   static const Color chipText = primaryContainer;
+
+  // Phase 6 additions
+  static const Color battleBackground  = Color(0xFF1A1A2E); // dark navy for battle screens
+  static const Color amber             = Color(0xFFF59E0B); // warm accent (special ops CTA)
+  static const Color coral             = Color(0xFFEF4444); // danger / timer-low
+  static const Color goldRank          = Color(0xFFE8B923); // tournament countdown / #1 rank
+  static const Color pendingBadge      = Color(0xFFFFF8E1); // doubt pending background
+  static const Color resolvedBadge     = Color(0xFFE8F5E9); // doubt resolved background
 }

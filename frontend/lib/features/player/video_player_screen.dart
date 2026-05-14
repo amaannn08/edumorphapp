@@ -6,7 +6,8 @@ import '../../shared/widgets/em_progress_bar.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final CourseModel? course;
-  const VideoPlayerScreen({super.key, this.course});
+  final Map<String, dynamic>? lessonData;
+  const VideoPlayerScreen({super.key, this.course, this.lessonData});
 
   @override
   State<VideoPlayerScreen> createState() => _VideoPlayerScreenState();
@@ -23,7 +24,28 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   @override
   void initState() {
     super.initState();
-    _course = widget.course ?? mockCourses[0];
+    // Prefer real lesson data from router if available; fall back to mock
+    if (widget.course != null) {
+      _course = widget.course!;
+    } else if (widget.lessonData != null) {
+      final d = widget.lessonData!;
+      // Map lesson fields to the mock CourseModel shape for the existing UI
+      _course = CourseModel(
+        id:           d['id'] as String? ?? '',
+        title:        d['title'] as String? ?? 'Lesson',
+        instructor:   d['instructor_name'] as String? ?? '',
+        subject:      d['subject'] as String? ?? '',
+        thumbnailUrl: d['thumbnail_url'] as String? ?? '',
+        progress:     ((d['progress_pct'] as num?)?.toDouble() ?? 0) / 100,
+        difficulty:   d['difficulty'] as String? ?? 'Medium',
+        lessons:      0,
+        isLive:       false,
+        duration:     '${d['duration_minutes'] ?? '?'}m',
+        videoUrl:     d['video_url'] as String?,
+      );
+    } else {
+      _course = mockCourses[0];
+    }
   }
 
   @override

@@ -11,6 +11,8 @@ class CourseModel {
   final String thumbnailUrl;
   final int lessons;
   final String difficulty;
+  final bool isLive;
+  final String? videoUrl;
 
   const CourseModel({
     required this.id,
@@ -22,6 +24,8 @@ class CourseModel {
     required this.thumbnailUrl,
     required this.lessons,
     required this.difficulty,
+    this.isLive = false,
+    this.videoUrl,
   });
 }
 

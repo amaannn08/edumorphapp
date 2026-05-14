@@ -78,4 +78,67 @@ async function verifyOtp(email, inputOtp) {
   return valid;
 }
 
-module.exports = { sendOtp, verifyOtp };
+module.exports = { sendOtp, verifyOtp, sendPhoneOtp, verifyPhoneOtp };
+
+// ── Phone OTP ────────────────────────────────────────────────────────────────
+
+function generatePhoneOtp() {
+  // 4-digit numeric OTP for phone
+  return crypto.randomInt(1000, 9999).toString();
+}
+
+async function sendPhoneOtp(phone) {
+  const { SMS_PROVIDER_KEY, SMS_FROM_NUMBER } = require('../config/env');
+  const otp = generatePhoneOtp();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+
+  // Invalidate any existing OTP for this phone
+  await query('DELETE FROM otp_codes WHERE phone = $1', [phone]);
+
+  const bcrypt = require('bcryptjs');
+  const hashedOtp = await bcrypt.hash(otp, 6);
+  await query(
+    'INSERT INTO otp_codes (phone, code_hash, expires_at) VALUES ($1, $2, $3)',
+    [phone, hashedOtp, expiresAt]
+  );
+
+  if (SMS_PROVIDER_KEY) {
+    // Real Twilio SMS
+    const twilio = require('twilio');
+    const client = twilio(SMS_PROVIDER_KEY.split(':')[0], SMS_PROVIDER_KEY.split(':')[1]);
+    await client.messages.create({
+      body: `Your Shiksha Verse code is: ${otp}. Expires in 10 minutes.`,
+      from: SMS_FROM_NUMBER,
+      to: phone,
+    });
+    logger.info('Phone OTP sent via SMS', { phone: phone.replace(/.(?=.{4})/, '*') });
+  } else {
+    // Dev stub — log to console
+    logger.warn(`[DEV PHONE OTP] ${phone} → ${otp} (SMS not configured, OTP logged)`);
+  }
+
+  return true;
+}
+
+async function verifyPhoneOtp(phone, inputOtp) {
+  const result = await query(
+    'SELECT code_hash, expires_at FROM otp_codes WHERE phone = $1 ORDER BY created_at DESC LIMIT 1',
+    [phone]
+  );
+
+  if (result.rowCount === 0) return false;
+  const { code_hash, expires_at } = result.rows[0];
+
+  if (new Date() > new Date(expires_at)) {
+    await query('DELETE FROM otp_codes WHERE phone = $1', [phone]);
+    return false;
+  }
+
+  const bcrypt = require('bcryptjs');
+  const valid = await bcrypt.compare(inputOtp, code_hash);
+  if (valid) {
+    await query('DELETE FROM otp_codes WHERE phone = $1', [phone]);
+  }
+  return valid;
+}
+

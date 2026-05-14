@@ -11,7 +11,8 @@
     "dev": "nodemon src/index.js",
     "test": "jest --forceExit",
     "lint": "eslint src/",
-    "db:migrate": "node src/db/migrate.js"
+    "db:migrate": "node src/db/migrate.js",
+    "db:seed": "node src/db/seed.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.600.0",
