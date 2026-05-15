@@ -22,6 +22,11 @@ import '../../features/profile/profile_screen.dart';
 import '../../features/player/lecture_detail_screen.dart';
 import '../../features/player/video_player_screen.dart';
 
+// Feature screens
+import '../../features/search/search_screen.dart';
+import '../../features/notifications/notifications_screen.dart';
+import '../../features/settings/settings_screen.dart';
+
 final _rootKey = GlobalKey<NavigatorState>();
 final _shellKey = GlobalKey<NavigatorState>();
 
@@ -97,10 +102,22 @@ final appRouter = GoRouter(
       },
     ),
 
-    // ── Lecture detail (full-screen) ────────────────────────────────────
+    // ── Lecture detail (full-screen) ───────────────────────────────────────────
     GoRoute(
       path: '/lecture/:id',
       builder: (_, state) => LectureDetailScreen(courseId: state.pathParameters['id']!),
+    ),
+
+    // ── Vault (full-screen, accepts subject extra) ──────────────────────────────
+    // Navigated from Home: context.push('/vault', extra: {'subject': name})
+    GoRoute(
+      path: '/vault',
+      builder: (_, state) {
+        final extra = state.extra as Map<String, dynamic>? ?? {};
+        return MyLearningVaultScreen(
+          initialSubject: extra['subject'] as String?,
+        );
+      },
     ),
 
     // ── Video player (full-screen) ──────────────────────────────────────
@@ -111,5 +128,14 @@ final appRouter = GoRouter(
         return VideoPlayerScreen(lessonData: extra);
       },
     ),
+
+    // ── Search ────────────────────────────────────────────────────────────
+    GoRoute(path: '/search',        builder: (_, __) => const SearchScreen()),
+
+    // ── Notifications ─────────────────────────────────────────────────────
+    GoRoute(path: '/notifications', builder: (_, __) => const NotificationsScreen()),
+
+    // ── Settings ──────────────────────────────────────────────────────────
+    GoRoute(path: '/settings',      builder: (_, __) => const SettingsScreen()),
   ],
 );

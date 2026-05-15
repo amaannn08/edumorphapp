@@ -44,7 +44,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         videoUrl:     d['video_url'] as String?,
       );
     } else {
-      _course = mockCourses[0];
+      _course = mockResumeCourse;
     }
   }
 

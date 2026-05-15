@@ -280,3 +280,73 @@ BEGIN
      FOR EACH ROW EXECUTE FUNCTION update_updated_at();';
 END;
 $$;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Phase 1 Migrations — Subject → Chapter → Content library (idempotent)
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- ── 1-A: Subjects ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS subjects (
+  id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  name          VARCHAR(80) NOT NULL UNIQUE,  -- e.g. 'Physics'
+  icon          VARCHAR(10),                  -- emoji e.g. '⚛️'
+  color_hex     VARCHAR(7),                   -- e.g. '#4F46E5'
+  display_order INTEGER     NOT NULL DEFAULT 0,
+  is_active     BOOLEAN     NOT NULL DEFAULT true,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ── 1-B: Chapters ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS chapters (
+  id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  subject_id    UUID        NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+  title         VARCHAR(200) NOT NULL,  -- e.g. 'Laws of Motion'
+  chapter_order INTEGER      NOT NULL DEFAULT 0,
+  is_published  BOOLEAN      NOT NULL DEFAULT false,
+  created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_chapters_subject ON chapters(subject_id);
+
+-- ── 1-C: Content Items ────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS content_items (
+  id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  chapter_id    UUID        NOT NULL REFERENCES chapters(id) ON DELETE CASCADE,
+  type          VARCHAR(20) NOT NULL CHECK (type IN ('video', 'note', 'mindmap', 'formula')),
+  title         VARCHAR(200) NOT NULL,
+  description   TEXT,
+  url           TEXT,           -- S3 URL for video/pdf; null for inline notes
+  thumbnail_url TEXT,
+  duration_min  INTEGER,        -- for video only
+  content       TEXT,           -- inline text for notes / formula content
+  item_order    INTEGER     NOT NULL DEFAULT 0,
+  is_published  BOOLEAN     NOT NULL DEFAULT false,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_content_chapter ON content_items(chapter_id);
+CREATE INDEX IF NOT EXISTS idx_content_type    ON content_items(type);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Phase 2 Migrations — Search, Notifications & Settings (idempotent)
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- ── 2-A: User notification preferences ───────────────────────────────────────
+ALTER TABLE users ADD COLUMN IF NOT EXISTS notification_prefs JSONB NOT NULL DEFAULT
+  '{"push_enabled": true, "streak_reminder": true, "new_content": true, "xp_milestone": true}'::jsonb;
+
+-- ── 2-B: Notifications ────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS notifications (
+  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  type        VARCHAR(30) NOT NULL DEFAULT 'system'
+              CHECK (type IN ('system', 'streak', 'xp_milestone', 'new_content', 'battle')),
+  title       VARCHAR(200) NOT NULL,
+  body        TEXT,
+  icon        VARCHAR(10),   -- emoji icon
+  action_url  TEXT,          -- deep-link path e.g. '/vault?subject=Physics'
+  is_read     BOOLEAN NOT NULL DEFAULT false,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_notifications_user     ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_unread   ON notifications(user_id, is_read);
+CREATE INDEX IF NOT EXISTS idx_notifications_created  ON notifications(created_at DESC);
+

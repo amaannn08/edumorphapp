@@ -17,13 +17,9 @@ router.get('/', async (req, res, next) => {
   try {
     const userId = req.user.id;
 
-    const [notesRes, doubtsRes, mapsRes] = await Promise.all([
+    const [notesRes, mapsRes] = await Promise.all([
       db.query(
         'SELECT id, title, body, subject, created_at, updated_at FROM notes WHERE user_id = $1 ORDER BY updated_at DESC',
-        [userId]
-      ),
-      db.query(
-        'SELECT id, question, status, course_id, lesson_id, created_at FROM doubts WHERE user_id = $1 ORDER BY created_at DESC',
         [userId]
       ),
       db.query(
@@ -36,7 +32,6 @@ router.get('/', async (req, res, next) => {
       success: true,
       data: {
         notes:     notesRes.rows,
-        doubts:    doubtsRes.rows,
         mind_maps: mapsRes.rows,
       },
     });
@@ -116,67 +111,22 @@ router.delete('/mind-maps/:id', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// ── POST /api/vault/ai-summary ────────────────────────────────────────────────
-router.post('/ai-summary', [
-  body('note_ids').isArray({ min: 1 }).withMessage('note_ids must be a non-empty array'),
-], async (req, res, next) => {
-  try {
-    validate(req);
-    if (!AI_SUMMARY_API_KEY) throw new AppError('AI summary not configured', 503);
+// ── POST /api/vault/ai-summary — DEPRECATED ──────────────────────────────────
+// AI summary feature has been removed. Returns 410 Gone.
+router.post('/ai-summary', (req, res) => {
+  res.status(410).json({
+    success: false,
+    message: 'AI summary has been removed. This endpoint is no longer available.',
+  });
+});
 
-    const { note_ids } = req.body;
-    const userId = req.user.id;
-
-    // Fetch notes, assert ownership
-    const notes = await db.query(
-      'SELECT title, body FROM notes WHERE id = ANY($1) AND user_id = $2',
-      [note_ids, userId]
-    );
-    if (notes.rowCount === 0) throw new AppError('No notes found', 404);
-
-    const combined = notes.rows
-      .map(n => `## ${n.title}\n${n.body || ''}`)
-      .join('\n\n');
-
-    // Call OpenAI
-    const https = require('https');
-    const payload = JSON.stringify({
-      model: AI_SUMMARY_MODEL,
-      messages: [
-        { role: 'system', content: 'You are a helpful study assistant for Indian students. Summarize the following student notes concisely for revision. Use bullet points. Keep it under 200 words.' },
-        { role: 'user',   content: combined },
-      ],
-      max_tokens: 400,
-    });
-
-    const summary = await new Promise((resolve, reject) => {
-      const options = {
-        hostname: 'api.openai.com',
-        path: '/v1/chat/completions',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${AI_SUMMARY_API_KEY}`,
-          'Content-Length': Buffer.byteLength(payload),
-        },
-      };
-      const req2 = https.request(options, (resp) => {
-        let data = '';
-        resp.on('data', c => { data += c; });
-        resp.on('end', () => {
-          try {
-            const parsed = JSON.parse(data);
-            resolve(parsed.choices?.[0]?.message?.content || 'Unable to generate summary.');
-          } catch { reject(new Error('Invalid AI response')); }
-        });
-      });
-      req2.on('error', reject);
-      req2.write(payload);
-      req2.end();
-    });
-
-    return res.json({ success: true, data: { summary } });
-  } catch (err) { next(err); }
+// ── GET /api/vault/doubts — DEPRECATED ───────────────────────────────────────
+// Doubts feature has been removed. Returns 410 Gone.
+router.get('/doubts', (req, res) => {
+  res.status(410).json({
+    success: false,
+    message: 'Doubts feature has been removed. This endpoint is no longer available.',
+  });
 });
 
 module.exports = router;

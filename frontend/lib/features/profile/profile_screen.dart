@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/data/mock_data.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -67,7 +68,7 @@ class ProfileScreen extends StatelessWidget {
             actions: [
               IconButton(
                 icon: const Icon(Icons.settings_outlined, color: Colors.white),
-                onPressed: () {},
+                onPressed: () => context.push('/settings'),
               ),
             ],
           ),
@@ -90,8 +91,8 @@ class ProfileScreen extends StatelessWidget {
                       _ProfileStat(
                           value: '#${user.rank}', label: 'Global\nRank', emoji: '🏆'),
                       _ProfileStat(
-                          value: '${mockCourses.length}',
-                          label: 'Courses\nEnrolled', emoji: '📚'),
+                          value: '${mockSubjects.length}',
+                          label: 'Subjects\nEnrolled', emoji: '📚'),
                     ],
                   ),
                   const SizedBox(height: 28),
@@ -139,7 +140,7 @@ class ProfileScreen extends StatelessWidget {
                   // ── Recent Courses ────────────────────────────────
                   Text('Recent Courses', style: AppTextStyles.headlineSm()),
                   const SizedBox(height: 14),
-                  ...mockCourses.take(3).map(
+                  ...([mockResumeCourse]).map(
                         (c) => Container(
                           margin: const EdgeInsets.only(bottom: 12),
                           padding: const EdgeInsets.all(14),

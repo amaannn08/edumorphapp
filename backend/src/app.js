@@ -20,8 +20,13 @@ const quizRoutes    = require('./routes/quiz');
 const profileRoutes = require('./routes/profile');
 const uploadRoutes  = require('./routes/upload');
 const homeRoutes    = require('./routes/home');
-const vaultRoutes   = require('./routes/vault');
-const battleRoutes  = require('./routes/battle');
+const vaultRoutes    = require('./routes/vault');
+const battleRoutes   = require('./routes/battle');
+const subjectRoutes  = require('./routes/subjects');
+const chapterRoutes  = require('./routes/chapters');
+const searchRoutes   = require('./routes/search');
+const notifRoutes    = require('./routes/notifications');
+const settingsRoutes = require('./routes/settings');
 
 const app = express();
 
@@ -57,8 +62,13 @@ app.use('/api/quiz',    apiLimiter,  quizRoutes);
 app.use('/api/profile', apiLimiter,  profileRoutes);
 app.use('/api/upload',  apiLimiter,  uploadRoutes);
 app.use('/api/home',    apiLimiter,  authenticate, homeRoutes);
-app.use('/api/vault',   apiLimiter,  authenticate, vaultRoutes);
-app.use('/api/battle',  apiLimiter,  authenticate, battleRoutes);
+app.use('/api/vault',    apiLimiter,  authenticate, vaultRoutes);
+app.use('/api/battle',   apiLimiter,  authenticate, battleRoutes);
+app.use('/api/subjects',       apiLimiter, authenticate, subjectRoutes);
+app.use('/api/chapters',       apiLimiter, authenticate, chapterRoutes);
+app.use('/api/search',         apiLimiter, authenticate, searchRoutes);
+app.use('/api/notifications',  apiLimiter, authenticate, notifRoutes);
+app.use('/api/settings',       apiLimiter, authenticate, settingsRoutes);
 
 // ── 404 Handler ───────────────────────────────────────────────────────────────
 app.use((req, res) => {

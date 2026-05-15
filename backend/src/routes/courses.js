@@ -124,34 +124,22 @@ router.delete('/:id/bookmark', authenticate, [
   } catch (err) { next(err); }
 });
 
-// ── POST /api/doubts ──────────────────────────────────────────────────────────
-router.post('/doubts', authenticate, [
-  body('question').trim().isLength({ min: 10 }).withMessage('Question must be at least 10 characters'),
-  body('course_id').optional().isUUID(),
-  body('lesson_id').optional().isUUID(),
-], async (req, res, next) => {
-  try {
-    validate(req);
-    const { question, course_id, lesson_id } = req.body;
-    const result = await db.query(
-      'INSERT INTO doubts (user_id, course_id, lesson_id, question) VALUES ($1, $2, $3, $4) RETURNING id, status',
-      [req.user.id, course_id || null, lesson_id || null, question]
-    );
-    return res.status(201).json({ success: true, data: result.rows[0] });
-  } catch (err) { next(err); }
+// ── POST /api/doubts — DEPRECATED ────────────────────────────────────────────
+// Doubts feature has been removed. Returns 410 Gone.
+router.post('/doubts', authenticate, (req, res) => {
+  res.status(410).json({
+    success: false,
+    message: 'Doubts feature has been removed. This endpoint is no longer available.',
+  });
 });
 
-// ── GET /api/doubts ───────────────────────────────────────────────────────────
-router.get('/doubts', authenticate, async (req, res, next) => {
-  try {
-    const { course_id } = req.query;
-    let sql = 'SELECT * FROM doubts WHERE user_id = $1';
-    const params = [req.user.id];
-    if (course_id) { sql += ' AND course_id = $2'; params.push(course_id); }
-    sql += ' ORDER BY created_at DESC';
-    const result = await db.query(sql, params);
-    return res.json({ success: true, data: result.rows });
-  } catch (err) { next(err); }
+// ── GET /api/doubts — DEPRECATED ─────────────────────────────────────────────
+// Doubts feature has been removed. Returns 410 Gone.
+router.get('/doubts', authenticate, (req, res) => {
+  res.status(410).json({
+    success: false,
+    message: 'Doubts feature has been removed. This endpoint is no longer available.',
+  });
 });
 
 module.exports = router;
